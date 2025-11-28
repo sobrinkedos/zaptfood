@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZaptFood - Admin</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .btn-approve {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .btn-approve:hover {
+            background-color: #45a049;
+        }
+
+        .status-pending {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-approved {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>ZaptFood Admin 🛡️</h1>
+    <h2>Vendedores Pendentes</h2>
+    <div id="loading">Carregando...</div>
+    <table id="vendorsTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>WhatsApp</th>
+                <th>Pix</th>
+                <th>Status</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="vendorsBody"></tbody>
+    </table>
+
+    <script>
+        async function loadVendors() {
+            try {
+                const response = await fetch('/api/admin/vendors');
+                const vendors = await response.json();
+
+                const tbody = document.getElementById('vendorsBody');
+                tbody.innerHTML = '';
+
+                vendors.forEach(vendor => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${vendor.name}</td>
+                        <td>${vendor.phone}</td>
+                        <td>${vendor.pix_key || '-'}</td>
+                        <td class="status-${vendor.status}">${vendor.status}</td>
+                        <td>
+                            ${vendor.status === 'pending' ?
+                            `<button class="btn-approve" onclick="approveVendor('${vendor.id}')">Aprovar</button>` :
+                            '-'}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('vendorsTable').style.display = 'table';
+            } catch (error) {
+                alert('Erro ao carregar vendedores');
+            }
+        }
+
+        async function approveVendor(id) {
+            if (!confirm('Confirmar aprovação?')) return;
+
+            try {
+                const response = await fetch(`/api/admin/vendors/${id}/approve`, { method: 'POST' });
+                if (response.ok) {
+                    alert('Vendedor aprovado!');
+                    loadVendors();
+                } else {
+                    alert('Erro ao aprovar');
+                }
+            } catch (error) {
+                alert('Erro de conexão');
+            }
+        }
+
+        loadVendors();
+    </script>
+</body>
+
+</html>

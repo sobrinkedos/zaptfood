@@ -1,0 +1,29 @@
+zaptfood
+
+riltonoliveiradesouzaliegelim.a@gmail.com
+
+Organization
+zaptfood
+
+Project name
+zaptfood
+
+Project ID
+lahmzwkhpkcaubkrxzdr
+
+Database password
+gT34cC3wGUXD1N2r
+
+Project URL
+https://lahmzwkhpkcaubkrxzdr.supabase.co
+
+anon
+public
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhaG16d2tocGtjYXVia3J4emRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNDUzNTMsImV4cCI6MjA3OTYyMTM1M30.mBkJnsOtkhZWfE5vfrZo7dvBbphJ02agiU1x6bFb-zM
+
+service_role
+secret
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhaG16d2tocGtjYXVia3J4emRyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA0NTM1MywiZXhwIjoyMDc5NjIxMzUzfQ.rHsh_ryQZwGxivq4-eIpitas2zgM-Sg9jl2FezNaBgo
+
+token
+sbp_db972e0fda0d91f3094558da82529bc0022e92b2

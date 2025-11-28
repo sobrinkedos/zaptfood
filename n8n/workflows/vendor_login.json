@@ -1,0 +1,99 @@
+{
+    "name": "ZaptFood - Vendor Login",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "vendor-login",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "requestMethod": "POST",
+                "url": "http://host.docker.internal:3000/api/vendors/check",
+                "options": {},
+                "bodyParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "phone",
+                            "value": "={{$json[\"body\"][\"data\"][\"key\"][\"remoteJid\"].split('@')[0]}}"
+                        }
+                    ]
+                }
+            },
+            "name": "Check Vendor API",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "requestMethod": "POST",
+                "url": "={{$env[\"EVOLUTION_API_URL\"]}}/message/sendText/{{$env[\"EVOLUTION_INSTANCE\"]}}",
+                "options": {},
+                "bodyParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "number",
+                            "value": "={{$json[\"body\"][\"data\"][\"key\"][\"remoteJid\"]}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "=✅ Login realizado! Bem-vindo, {{$json[\"name\"]}}.\n\nMenu Vendedor:\n1. Lançar Rodada\n2. Ver Pedidos"
+                        }
+                    ]
+                },
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$env[\"EVOLUTION_API_KEY\"]}}"
+                        }
+                    ]
+                }
+            },
+            "name": "Send Success",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 1,
+            "position": [
+                900,
+                200
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Check Vendor API",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Vendor API": {
+            "main": [
+                [
+                    {
+                        "node": "Send Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

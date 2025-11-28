@@ -1,0 +1,103 @@
+{
+    "name": "ZaptFood - Greeting & Menu",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "webhook",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "dataType": "string",
+                "value1": "={{$json[\"body\"][\"data\"][\"message\"][\"conversation\"]}}",
+                "rules": {
+                    "rules": [
+                        {
+                            "value2": "Oi"
+                        },
+                        {
+                            "value2": "Ola"
+                        },
+                        {
+                            "value2": "Menu"
+                        }
+                    ]
+                }
+            },
+            "name": "Check Greeting",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "requestMethod": "POST",
+                "url": "={{$env[\"EVOLUTION_API_URL\"]}}/message/sendText/{{$env[\"EVOLUTION_INSTANCE\"]}}",
+                "options": {},
+                "bodyParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "number",
+                            "value": "={{$json[\"body\"][\"data\"][\"key\"][\"remoteJid\"]}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "👋 Olá! Bem-vindo ao ZaptFood.\n\nEscolha uma opção:\n1. 🍔 Fazer Pedido\n2. 🏪 Sou Vendedor\n3. 🆘 Suporte"
+                        }
+                    ]
+                },
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$env[\"EVOLUTION_API_KEY\"]}}"
+                        }
+                    ]
+                }
+            },
+            "name": "Send Menu",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 1,
+            "position": [
+                900,
+                200
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Check Greeting",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Greeting": {
+            "main": [
+                [
+                    {
+                        "node": "Send Menu",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
