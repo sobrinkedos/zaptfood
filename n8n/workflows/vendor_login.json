@@ -1,5 +1,6 @@
 {
     "name": "ZaptFood - Vendor Login",
+    "active": true,
     "nodes": [
         {
             "parameters": {
