@@ -43,3 +43,6 @@ qrcode_viewer.html
 evolution_store/
 n8n_data/
 postgres_data/
+
+# Documentos
+docs/
