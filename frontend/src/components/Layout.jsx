@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, PlusCircle, LogOut, ShoppingBag } from 'lucide-react';
+import { Home, PlusCircle, LogOut, ShoppingBag, Package, List } from 'lucide-react';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -30,18 +30,26 @@ const Layout = () => {
                 <Outlet />
             </main>
 
-            <nav className="bg-white border-t border-gray-200 fixed bottom-0 w-full flex justify-around p-3 pb-safe">
+            <nav className="bg-white border-t border-gray-200 fixed bottom-0 w-full flex justify-around p-3 pb-safe z-10">
                 <Link to="/dashboard" className={`flex flex-col items-center ${location.pathname === '/dashboard' ? 'text-orange-600' : 'text-gray-400'}`}>
                     <Home size={24} />
-                    <span className="text-xs mt-1">Início</span>
+                    <span className="text-[10px] mt-1">Início</span>
+                </Link>
+                <Link to="/products" className={`flex flex-col items-center ${location.pathname === '/products' ? 'text-orange-600' : 'text-gray-400'}`}>
+                    <Package size={24} />
+                    <span className="text-[10px] mt-1">Produtos</span>
                 </Link>
                 <Link to="/create-listing" className={`flex flex-col items-center ${location.pathname === '/create-listing' ? 'text-orange-600' : 'text-gray-400'}`}>
-                    <PlusCircle size={24} />
-                    <span className="text-xs mt-1">Nova Rodada</span>
+                    <PlusCircle size={32} className="text-orange-600 -mt-6 bg-white rounded-full" />
+                    <span className="text-[10px] mt-1">Lançar</span>
+                </Link>
+                <Link to="/listings" className={`flex flex-col items-center ${location.pathname === '/listings' ? 'text-orange-600' : 'text-gray-400'}`}>
+                    <List size={24} />
+                    <span className="text-[10px] mt-1">Rodadas</span>
                 </Link>
                 <Link to="/orders" className={`flex flex-col items-center ${location.pathname === '/orders' ? 'text-orange-600' : 'text-gray-400'}`}>
                     <ShoppingBag size={24} />
-                    <span className="text-xs mt-1">Pedidos</span>
+                    <span className="text-[10px] mt-1">Pedidos</span>
                 </Link>
             </nav>
         </div>

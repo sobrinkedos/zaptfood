@@ -300,6 +300,44 @@ app.post('/api/products', authenticateToken, async (req, res) => {
   }
 });
 
+// Update Product
+app.put('/api/products/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { name, description, category_id, price } = req.body;
+
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    // Verify ownership
+    const { data: existing, error: findError } = await supabase
+      .from('skus')
+      .select('vendor_id')
+      .eq('id', id)
+      .single();
+
+    if (findError || !existing) return res.status(404).json({ error: 'Produto não encontrado' });
+    if (existing.vendor_id !== req.user.id && req.user.role !== 'admin') return res.sendStatus(403);
+
+    const { data, error } = await supabase
+      .from('skus')
+      .update({
+        name,
+        description,
+        category_id,
+        price: Math.round(price * 100)
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Produto atualizado!', data });
+  } catch (err) {
+    console.error('Error updating product:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // Get Vendor Products
 app.get('/api/vendors/:id/products', authenticateToken, async (req, res) => {
   const { id } = req.params;
@@ -358,6 +396,62 @@ app.post('/api/listings', authenticateToken, async (req, res) => {
 
   } catch (err) {
     console.error('Error creating listing:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get Vendor Listings (History)
+app.get('/api/vendors/:id/listings', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  if (req.user.id !== id && req.user.role !== 'admin') return res.sendStatus(403);
+
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  const { data, error } = await supabase
+    .from('listings')
+    .select('*, skus(name, price)')
+    .eq('skus.vendor_id', id) // This might fail if we can't filter by joined table directly in simple select
+    // Supabase requires !inner for filtering on joined tables
+    .select('*, skus!inner(name, price, vendor_id)')
+    .eq('skus.vendor_id', id)
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Cancel Listing
+app.patch('/api/listings/:id/cancel', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    // Verify ownership via SKU
+    const { data: listing, error: findError } = await supabase
+      .from('listings')
+      .select('*, skus(vendor_id)')
+      .eq('id', id)
+      .single();
+
+    if (findError || !listing) return res.status(404).json({ error: 'Rodada não encontrada' });
+    if (listing.skus.vendor_id !== req.user.id && req.user.role !== 'admin') return res.sendStatus(403);
+
+    // Cancel by setting TTL to now (expired) and qty to 0
+    const { data, error } = await supabase
+      .from('listings')
+      .update({
+        qty: 0,
+        ttl: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Rodada cancelada!', data });
+  } catch (err) {
+    console.error('Error cancelling listing:', err);
     res.status(400).json({ error: err.message });
   }
 });

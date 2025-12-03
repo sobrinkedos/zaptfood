@@ -6,6 +6,9 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreateListing from './pages/CreateListing';
 import RegisterProduct from './pages/RegisterProduct';
+import Products from './pages/Products';
+import EditProduct from './pages/EditProduct';
+import Listings from './pages/Listings';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -33,6 +36,24 @@ function App() {
           <Route path="register-product" element={
             <ProtectedRoute>
               <RegisterProduct />
+            </ProtectedRoute>
+          } />
+
+          <Route path="products" element={
+            <ProtectedRoute>
+              <Products />
+            </ProtectedRoute>
+          } />
+
+          <Route path="edit-product/:id" element={
+            <ProtectedRoute>
+              <EditProduct />
+            </ProtectedRoute>
+          } />
+
+          <Route path="listings" element={
+            <ProtectedRoute>
+              <Listings />
             </ProtectedRoute>
           } />
 
