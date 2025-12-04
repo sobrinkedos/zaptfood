@@ -607,6 +607,181 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
+// --- DRIVER / DELIVERY PARTNER ENDPOINTS ---
+
+// Register Driver
+app.post('/api/drivers/register', async (req, res) => {
+  const { name, phone, cnh, pix_key, password } = req.body;
+
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+  if (!password) return res.status(400).json({ error: 'Password is required' });
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const { data, error } = await supabase
+      .from('delivery_partners')
+      .insert([{
+        name,
+        phone,
+        cnh,
+        pix_key,
+        password: hashedPassword,
+        status: 'offline'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ message: 'Entregador cadastrado!', data });
+  } catch (err) {
+    console.error('Error registering driver:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Login Driver
+app.post('/api/drivers/login', async (req, res) => {
+  const { phone, password } = req.body;
+
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+  if (!phone || !password) return res.status(400).json({ error: 'Phone and password are required' });
+
+  try {
+    const { data: driver, error } = await supabase
+      .from('delivery_partners')
+      .select('*')
+      .eq('phone', phone)
+      .single();
+
+    if (error || !driver) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    if (!driver.password) {
+      return res.status(401).json({ error: 'Senha não configurada.' });
+    }
+
+    const match = await bcrypt.compare(password, driver.password);
+    if (!match) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    const token = jwt.sign({ id: driver.id, phone: driver.phone, role: 'driver' }, JWT_SECRET, { expiresIn: '24h' });
+
+    res.json({ message: 'Login realizado', token, driver: { id: driver.id, name: driver.name, status: driver.status } });
+
+  } catch (err) {
+    console.error('Error logging in driver:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create Delivery Request (Vendor or System)
+app.post('/api/deliveries', authenticateToken, async (req, res) => {
+  const { order_id, pickup_addr, delivery_addr, delivery_fee, partner_fee } = req.body;
+
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data, error } = await supabase
+      .from('deliveries')
+      .insert([{
+        order_id,
+        pickup_addr,
+        delivery_addr,
+        delivery_fee,
+        partner_fee,
+        status: 'pending'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ message: 'Solicitação de entrega criada', data });
+  } catch (err) {
+    console.error('Error creating delivery:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get Available Deliveries
+app.get('/api/deliveries/available', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'driver' && req.user.role !== 'admin') return res.sendStatus(403);
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data, error } = await supabase
+      .from('deliveries')
+      .select('*, orders(total_cents, customer_phone, listings(skus(name, vendors(name, phone, location))))')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error('Error fetching available deliveries:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Accept Delivery
+app.post('/api/deliveries/:id/accept', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const driver_id = req.user.id;
+
+  if (req.user.role !== 'driver') return res.sendStatus(403);
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data, error } = await supabase
+      .rpc('try_lock_delivery', { p_delivery_id: id, p_partner_id: driver_id });
+
+    if (error) throw error;
+
+    // If successful, it returns vendor_phone. If empty, it failed.
+    if (!data || data.length === 0) {
+      return res.status(400).json({ error: 'Entrega não disponível ou já aceita.' });
+    }
+
+    res.json({ message: 'Entrega aceita!', vendor_phone: data[0].vendor_phone });
+  } catch (err) {
+    console.error('Error accepting delivery:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Update Delivery Status
+app.patch('/api/deliveries/:id/status', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const driver_id = req.user.id;
+
+  if (req.user.role !== 'driver') return res.sendStatus(403);
+  if (!['picked_up', 'delivered'].includes(status)) return res.status(400).json({ error: 'Status inválido' });
+
+  try {
+    const updateData = { status };
+    if (status === 'picked_up') updateData.picked_up_at = new Date().toISOString();
+    if (status === 'delivered') updateData.delivered_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('deliveries')
+      .update(updateData)
+      .eq('id', id)
+      .eq('partner_id', driver_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: `Status atualizado para ${status}`, data });
+  } catch (err) {
+    console.error('Error updating delivery status:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
