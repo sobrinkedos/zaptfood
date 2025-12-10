@@ -1,0 +1,58 @@
+[
+    {
+        "id": "TEST_DEBUG_WF",
+        "name": "Test Webhook Debug",
+        "active": true,
+        "isArchived": false,
+        "nodes": [
+            {
+                "parameters": {
+                    "httpMethod": "POST",
+                    "path": "test-debug",
+                    "responseMode": "lastNode",
+                    "options": {}
+                },
+                "name": "Webhook",
+                "type": "n8n-nodes-base.webhook",
+                "typeVersion": 1,
+                "position": [
+                    0,
+                    0
+                ],
+                "id": "webhook-test-1",
+                "webhookId": "test-debug-wh-id"
+            },
+            {
+                "parameters": {
+                    "functionCode": "// Log tudo que recebemos\nconst output = {\n  json_direct: $json,\n  json_body: $json.body,\n  json_data: $json.data,\n  full_structure: JSON.stringify($json, null, 2)\n};\nreturn [{ json: output }];"
+                },
+                "name": "Debug Output",
+                "type": "n8n-nodes-base.function",
+                "typeVersion": 1,
+                "position": [
+                    200,
+                    0
+                ],
+                "id": "function-test-1"
+            }
+        ],
+        "connections": {
+            "Webhook": {
+                "main": [
+                    [
+                        {
+                            "node": "Debug Output",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1"
+        },
+        "staticData": null,
+        "tags": []
+    }
+]

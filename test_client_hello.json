@@ -1,0 +1,23 @@
+{
+    "data": {
+        "key": {
+            "remoteJid": "5511999998888@s.whatsapp.net",
+            "fromMe": false,
+            "id": "MESSAGE_ID_123"
+        },
+        "pushName": "Cliente Teste",
+        "message": {
+            "conversation": "Oi"
+        },
+        "messageType": "conversation",
+        "messageTimestamp": 1709220000,
+        "owner": false,
+        "ephemeralMessage": false
+    },
+    "event": "messages.upsert",
+    "instance": "zaptfood",
+    "destination": "http://host.docker.internal:5678/webhook/whatsapp",
+    "date_time": "2024-03-01T12:00:00.000Z",
+    "server_url": "http://localhost:8080",
+    "apikey": "429683C4C977415CAAFCCE10F7D57E11"
+}

@@ -1,0 +1,17 @@
+const products = items.map(i => i.json);
+let text = "🍗 *Frango na Hora* - Disponíveis Agora:\n\n";
+
+if (products.length === 0 || (products.length === 1 && Object.keys(products[0]).length === 0)) {
+  text += "😔 Nenhuma fornada saindo agora. Tente mais tarde!";
+} else {
+  products.forEach((item, index) => {
+    text += `*${index + 1}. ${item.vendor}*\n`;
+    text += `   💰 R$ ${Number(item.price).toFixed(2)}\n`;
+    text += `   🔥 ${item.qty} unidades prontas\n`;
+    text += `   📍 ${item.vendor_location || 'Local não informado'}\n\n`;
+  });
+  text += "Responda com o número para pedir!";
+}
+
+const phone = $node["Webhook"].json.data.key.remoteJid.replace('@s.whatsapp.net', '');
+return [{ json: { text, phone } }];

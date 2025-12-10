@@ -1,0 +1,55 @@
+[
+    {
+        "id": "TEST_WEBHOOK_DEBUG",
+        "name": "Test Webhook Debug",
+        "active": true,
+        "nodes": [
+            {
+                "parameters": {
+                    "httpMethod": "POST",
+                    "path": "test-debug",
+                    "responseMode": "lastNode",
+                    "options": {}
+                },
+                "name": "Webhook",
+                "type": "n8n-nodes-base.webhook",
+                "typeVersion": 1,
+                "position": [
+                    0,
+                    0
+                ],
+                "id": "webhook-1",
+                "webhookId": "test-debug-webhook-id"
+            },
+            {
+                "parameters": {
+                    "functionCode": "return [{ json: { received_data: $json, node_access: $node } }];"
+                },
+                "name": "Debug Output",
+                "type": "n8n-nodes-base.function",
+                "typeVersion": 1,
+                "position": [
+                    200,
+                    0
+                ],
+                "id": "function-1"
+            }
+        ],
+        "connections": {
+            "Webhook": {
+                "main": [
+                    [
+                        {
+                            "node": "Debug Output",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1"
+        }
+    }
+]

@@ -1,7 +1,4 @@
 {
-    "id": "ALKHrzdTxBsGmt42",
-    "versionId": "550e8400-e29b-41d4-a716-446655440000",
-    "active": true,
     "name": "ZaptFood Main Bot",
     "nodes": [
         {
@@ -44,12 +41,12 @@
                 "url": "http://host.docker.internal:3000/api/vendors/check",
                 "sendBody": true,
                 "specifyBody": "json",
-                "jsonBody": "={\n  \"phone\": \"{{$json.body.data.key.remoteJid.split('@')[0]}}\"\n}",
+                "jsonBody": "={\"phone\": \"{{ $json.body.data.key.remoteJid.split('@')[0] }}\"}",
                 "options": {}
             },
             "name": "Check Vendor",
             "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 1,
+            "typeVersion": 4.2,
             "position": [
                 250,
                 300
@@ -82,7 +79,7 @@
                         {
                             "value1": "={{$node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text}}",
                             "operation": "regex",
-                            "value2": "^[Ll]an[çc]ar \\\\d+ \\\\d+"
+                            "value2": "^[Ll]an[çc]ar \\d+ \\d+"
                         }
                     ]
                 }
@@ -102,7 +99,7 @@
                         {
                             "value1": "={{$node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text}}",
                             "operation": "regex",
-                            "value2": "^-\\\\d+"
+                            "value2": "^-\\d+"
                         }
                     ]
                 }
@@ -161,11 +158,20 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://evolution_api:8080/message/sendText/zaptfood",
+                "url": "http://evolution-api:8080/message/sendText/zaptfood",
                 "sendBody": true,
-                "specifyBody": "json",
-                "jsonBody": "={\n  \"number\": \"{{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}\",\n  \"textMessage\": {\n    \"text\": \"✅ Rodada lançada com sucesso!\\n\\n🍗 {{$json.data[0].qty}} frangos disponíveis.\\n💰 R$ {{$node[\"Parse Launch\"].json.price}}\\n\\nPara vender no balcão, digite \\\"-1\\\" ou \\\"-2\\\".\"\n  }\n}",
-                "options": {},
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "=✅ Rodada lançada!\n\n🍗 {{$json.data[0].qty}} unidades.\n💰 R$ {{$node[\"Parse Launch\"].json.price}}\n\nDigite -1 ou -2 para vender balcão."
+                        }
+                    ]
+                },
                 "headerParameters": {
                     "parameters": [
                         {
@@ -177,7 +183,8 @@
                             "value": "application/json"
                         }
                     ]
-                }
+                },
+                "options": {}
             },
             "name": "Reply Launch",
             "type": "n8n-nodes-base.httpRequest",
@@ -229,11 +236,20 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://evolution_api:8080/message/sendText/zaptfood",
+                "url": "http://evolution-api:8080/message/sendText/zaptfood",
                 "sendBody": true,
-                "specifyBody": "json",
-                "jsonBody": "={\n  \"number\": \"{{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}\",\n  \"textMessage\": {\n    \"text\": \"📉 Estoque atualizado!\\n\\nRestam: {{$json.new_qty}} frangos.\"\n  }\n}",
-                "options": {},
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "=📉 Estoque atualizado!\n\nRestam: {{$json.new_qty}} unidades."
+                        }
+                    ]
+                },
                 "headerParameters": {
                     "parameters": [
                         {
@@ -245,7 +261,8 @@
                             "value": "application/json"
                         }
                     ]
-                }
+                },
+                "options": {}
             },
             "name": "Reply Decrement",
             "type": "n8n-nodes-base.httpRequest",
@@ -270,7 +287,7 @@
         },
         {
             "parameters": {
-                "functionCode": "const products = items.map(i => i.json);\nlet text = \"🍗 *Frango na Hora* - Disponíveis Agora:\\n\\n\";\n\nif (products.length === 0 || (products.length === 1 && Object.keys(products[0]).length === 0)) {\n  text += \"😔 Nenhuma fornada saindo agora. Tente mais tarde!\";\n} else {\n  products.forEach((item, index) => {\n    text += `*${index + 1}. ${item.vendor}*\\n`;\n    text += `   💰 R$ ${Number(item.price).toFixed(2)}\\n`;\n    text += `   🔥 ${item.qty} unidades prontas\\n`;\n    text += `   📍 ${item.vendor_location || 'Local não informado'}\\n\\n`;\n  });\n  text += \"Responda com o número para pedir!\";\n}\n\nconst phone = $node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '');\nreturn [{ json: { text, phone } }];"
+                "functionCode": "const products = items.map(i => i.json);\nlet text = \"🍗 *Frango na Hora* - Disponíveis Agora:\\n\\n\";\n\nif (products.length === 0 || (products.length === 1 && Object.keys(products[0]).length === 0)) {\n  text += \"😔 Nenhuma fornada saindo agora. Tente mais tarde!\";\n} else {\n  products.forEach((item, index) => {\n    text += `*${index + 1}. ${item.vendor}*\\n`;\n    text += `   💰 R$ ${Number(item.price).toFixed(2)}\\n`;\n    text += `   🔥 ${item.qty} unidades prontas\\n`;\n    text += `   📍 ${item.vendor_location || 'Local não informado'}\\n\\n`;\n  });\n  text += \"Responda com o número para pedir!\";\n}\n\nreturn [{ json: { text } }];"
             },
             "name": "Format Catalog",
             "type": "n8n-nodes-base.function",
@@ -283,11 +300,20 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://evolution_api:8080/message/sendText/zaptfood",
+                "url": "http://evolution-api:8080/message/sendText/zaptfood",
                 "sendBody": true,
-                "specifyBody": "json",
-                "jsonBody": "={\n  \"number\": \"{{$json.phone}}\",\n  \"textMessage\": {\n    \"text\": \"{{$json.text}}\"\n  }\n}",
-                "options": {},
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "={{$json.text}}"
+                        }
+                    ]
+                },
                 "headerParameters": {
                     "parameters": [
                         {
@@ -299,7 +325,8 @@
                             "value": "application/json"
                         }
                     ]
-                }
+                },
+                "options": {}
             },
             "name": "Send Catalog",
             "type": "n8n-nodes-base.httpRequest",
@@ -312,11 +339,20 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://evolution_api:8080/message/sendText/zaptfood",
+                "url": "http://evolution-api:8080/message/sendText/zaptfood",
                 "sendBody": true,
-                "specifyBody": "json",
-                "jsonBody": "={\n  \"number\": \"{{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}\",\n  \"textMessage\": {\n    \"text\": \"👨‍🍳 *Menu do Vendedor*\\n\\nPara lançar uma nova fornada:\\n👉 Digite: *Lançar QTD PREÇO*\\nEx: Lançar 10 40\\n\\nPara dar baixa (venda balcão):\\n👉 Digite: *-1* ou *-2*\"\n  }\n}",
-                "options": {},
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "👨‍🍳 *Menu do Vendedor*\n\nPara lançar uma nova fornada:\n👉 Digite: *Lançar QTD PREÇO*\nEx: Lançar 10 40\n\nPara dar baixa (venda balcão):\n👉 Digite: *-1* ou *-2*"
+                        }
+                    ]
+                },
                 "headerParameters": {
                     "parameters": [
                         {
@@ -328,7 +364,8 @@
                             "value": "application/json"
                         }
                     ]
-                }
+                },
+                "options": {}
             },
             "name": "Vendor Help",
             "type": "n8n-nodes-base.httpRequest",
@@ -345,7 +382,7 @@
                         {
                             "value1": "={{$node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text}}",
                             "operation": "regex",
-                            "value2": "^\\\\d+$"
+                            "value2": "^\\d+$"
                         }
                     ]
                 }
@@ -373,7 +410,7 @@
         },
         {
             "parameters": {
-                "functionCode": "const msg = $node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text;\nconst index = parseInt(msg) - 1;\nconst products = items.map(i => i.json);\n\nif (index < 0 || index >= products.length) {\n  return [{ json: { error: 'Opção inválida' } }];\n}\n\nconst selected = products[index];\nconst phone = $node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '');\nreturn [{ json: {\n  listing_id: selected.id,\n  customer_phone: phone,\n  qty: 1,\n  phone: phone\n} }];"
+                "functionCode": "const msg = $node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text;\nconst index = parseInt(msg) - 1;\nconst products = items.map(i => i.json);\n\nif (index < 0 || index >= products.length) {\n  return [{ json: { error: 'Opção inválida' } }];\n}\n\nconst selected = products[index];\nreturn [{ json: {\n  listing_id: selected.id,\n  customer_phone: $node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', ''),\n  qty: 1\n} }];"
             },
             "name": "Pick Item",
             "type": "n8n-nodes-base.function",
@@ -417,11 +454,20 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://evolution_api:8080/message/sendText/zaptfood",
+                "url": "http://evolution-api:8080/message/sendText/zaptfood",
                 "sendBody": true,
-                "specifyBody": "json",
-                "jsonBody": "={\n  \"number\": \"{{$node[\"Pick Item\"].json.phone}}\",\n  \"textMessage\": {\n    \"text\": \"✅ Pedido criado!\\n\\nTotal: R$ {{$json.total.toFixed(2)}}\\n\\nCopie o código abaixo e pague no seu banco:\"\n  }\n}",
-                "options": {},
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "=✅ Pedido criado!\n\nTotal: R$ {{$json.total.toFixed(2)}}\n\nCopie o código Pix abaixo:"
+                        }
+                    ]
+                },
                 "headerParameters": {
                     "parameters": [
                         {
@@ -433,7 +479,8 @@
                             "value": "application/json"
                         }
                     ]
-                }
+                },
+                "options": {}
             },
             "name": "Reply Pix Intro",
             "type": "n8n-nodes-base.httpRequest",
@@ -446,11 +493,20 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://evolution_api:8080/message/sendText/zaptfood",
+                "url": "http://evolution-api:8080/message/sendText/zaptfood",
                 "sendBody": true,
-                "specifyBody": "json",
-                "jsonBody": "={\n  \"number\": \"{{$node[\"Pick Item\"].json.phone}}\",\n  \"textMessage\": {\n    \"text\": \"{{$json.pix_code}}\"\n  }\n}",
-                "options": {},
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "={{$node[\"Create Order API\"].json.pix_code}}"
+                        }
+                    ]
+                },
                 "headerParameters": {
                     "parameters": [
                         {
@@ -462,7 +518,8 @@
                             "value": "application/json"
                         }
                     ]
-                }
+                },
+                "options": {}
             },
             "name": "Reply Pix Code",
             "type": "n8n-nodes-base.httpRequest",

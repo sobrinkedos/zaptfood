@@ -1,0 +1,757 @@
+{
+  "name": "ZaptFood Main Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.body.data.key.fromMe}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Ignore Self",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/vendors/check",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{$json.body.data.key.remoteJid.split('@')[0]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Check Vendor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.error === undefined}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Is Vendor?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text}}",
+              "operation": "regex",
+              "value2": "^[Ll]an[çc]ar \\d+ \\d+"
+            }
+          ]
+        }
+      },
+      "name": "Is Launch?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text}}",
+              "operation": "regex",
+              "value2": "^-\\d+"
+            }
+          ]
+        }
+      },
+      "name": "Is Decrement?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const msg = $node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text;\nconst parts = msg.split(' ');\nreturn {\n  vendor_id: $node[\"Check Vendor\"].json.id,\n  qty: parseInt(parts[1]),\n  price: parseFloat(parts[2])\n};"
+      },
+      "name": "Parse Launch",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        950,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/listings",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vendor_id",
+              "value": "={{$json.vendor_id}}"
+            },
+            {
+              "name": "qty",
+              "value": "={{$json.qty}}"
+            },
+            {
+              "name": "price",
+              "value": "={{$json.price}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "API Launch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1150,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/message/sendText/zaptfood",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+            },
+            {
+              "name": "text",
+              "value": "=✅ Rodada lançada com sucesso!\n\n🍗 {{$json.data[0].qty}} frangos disponíveis.\n💰 R$ {{$node[\"Parse Launch\"].json.price}}\n\nPara vender no balcão, digite \"-1\" ou \"-2\"."
+            }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "429683C4C977415CAAFCCE10F7D57E11"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Reply Launch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1350,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const msg = $node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text;\nconst amount = parseInt(msg.replace('-', ''));\nreturn {\n  vendor_id: $node[\"Check Vendor\"].json.id,\n  amount: amount\n};"
+      },
+      "name": "Parse Decrement",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        950,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/listings/decrement",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vendor_id",
+              "value": "={{$json.vendor_id}}"
+            },
+            {
+              "name": "amount",
+              "value": "={{$json.amount}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "API Decrement",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1150,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/message/sendText/zaptfood",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+            },
+            {
+              "name": "text",
+              "value": "=📉 Estoque atualizado!\n\nRestam: {{$json.new_qty}} frangos."
+            }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "429683C4C977415CAAFCCE10F7D57E11"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Reply Decrement",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1350,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:3000/api/listings",
+        "options": {}
+      },
+      "name": "Get Catalog",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        700,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const products = items.map(i => i.json);\nlet text = \"🍗 *Frango na Hora* - Disponíveis Agora:\\n\\n\";\n\nif (products.length === 0 || (products.length === 1 && Object.keys(products[0]).length === 0)) {\n  text += \"😔 Nenhuma fornada saindo agora. Tente mais tarde!\";\n} else {\n  products.forEach((item, index) => {\n    text += `*${index + 1}. ${item.vendor}*\\n`;\n    text += `   💰 R$ ${Number(item.price).toFixed(2)}\\n`;\n    text += `   🔥 ${item.qty} unidades prontas\\n`;\n    text += `   📍 ${item.vendor_location || 'Local não informado'}\\n\\n`;\n  });\n  text += \"Responda com o número para pedir!\";\n}\n\nreturn [{ json: { text } }];"
+      },
+      "name": "Format Catalog",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        900,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/message/sendText/zaptfood",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+            },
+            {
+              "name": "text",
+              "value": "={{$json.text}}"
+            }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "429683C4C977415CAAFCCE10F7D57E11"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Send Catalog",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/message/sendText/zaptfood",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+            },
+            {
+              "name": "text",
+              "value": "👨‍🍳 *Menu do Vendedor*\n\nPara lançar uma nova fornada:\n👉 Digite: *Lançar QTD PREÇO*\nEx: Lançar 10 40\n\nPara dar baixa (venda balcão):\n👉 Digite: *-1* ou *-2*"
+            }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "429683C4C977415CAAFCCE10F7D57E11"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Vendor Help",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        950,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text}}",
+              "operation": "regex",
+              "value2": "^\\d+$"
+            }
+          ]
+        }
+      },
+      "name": "Is Order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:3000/api/listings",
+        "options": {}
+      },
+      "name": "Get Catalog Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        900,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const msg = $node[\"Webhook\"].json.body.data.message.conversation || $node[\"Webhook\"].json.body.data.message.extendedTextMessage.text;\nconst index = parseInt(msg) - 1;\nconst products = items[0].json;\n\nif (index < 0 || index >= products.length) {\n  return [{ json: { error: 'Opção inválida' } }];\n}\n\nconst selected = products[index];\nreturn [{ json: {\n  listing_id: selected.id,\n  customer_phone: $node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', ''),\n  qty: 1\n} }];"
+      },
+      "name": "Pick Item",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/orders",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "customer_phone",
+              "value": "={{$json.customer_phone}}"
+            },
+            {
+              "name": "listing_id",
+              "value": "={{$json.listing_id}}"
+            },
+            {
+              "name": "qty",
+              "value": "={{$json.qty}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Create Order API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/message/sendText/zaptfood",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+            },
+            {
+              "name": "text",
+              "value": "=✅ Pedido criado! \n\nTotal: R$ {{$json.total.toFixed(2)}}\n\nCopie o código abaixo e pague no seu banco:"
+            }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "429683C4C977415CAAFCCE10F7D57E11"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Reply Pix Intro",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://evolution-api:8080/message/sendText/zaptfood",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{$node[\"Webhook\"].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')}}"
+            },
+            {
+              "name": "text",
+              "value": "={{$json.pix_code}}"
+            }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "429683C4C977415CAAFCCE10F7D57E11"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Reply Pix Code",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        700
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Ignore Self",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Self": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Check Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Vendor": {
+      "main": [
+        [
+          {
+            "node": "Is Vendor?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Vendor?": {
+      "main": [
+        [
+          {
+            "node": "Is Launch?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Launch?": {
+      "main": [
+        [
+          {
+            "node": "Parse Launch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Decrement?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Launch": {
+      "main": [
+        [
+          {
+            "node": "API Launch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Launch": {
+      "main": [
+        [
+          {
+            "node": "Reply Launch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Decrement?": {
+      "main": [
+        [
+          {
+            "node": "Parse Decrement",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vendor Help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Decrement": {
+      "main": [
+        [
+          {
+            "node": "API Decrement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Decrement": {
+      "main": [
+        [
+          {
+            "node": "Reply Decrement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Catalog": {
+      "main": [
+        [
+          {
+            "node": "Format Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Catalog": {
+      "main": [
+        [
+          {
+            "node": "Send Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Order?": {
+      "main": [
+        [
+          {
+            "node": "Get Catalog Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Catalog Order": {
+      "main": [
+        [
+          {
+            "node": "Pick Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Item": {
+      "main": [
+        [
+          {
+            "node": "Create Order API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order API": {
+      "main": [
+        [
+          {
+            "node": "Reply Pix Intro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Pix Intro": {
+      "main": [
+        [
+          {
+            "node": "Reply Pix Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "id": "6ubPA5St1tRpAClS"
+}

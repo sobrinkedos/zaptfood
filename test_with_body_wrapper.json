@@ -1,0 +1,21 @@
+{
+    "body": {
+        "data": {
+            "key": {
+                "remoteJid": "5587991201718@s.whatsapp.net",
+                "fromMe": false,
+                "id": "MESSAGE_ID_123"
+            },
+            "pushName": "Cliente Teste",
+            "message": {
+                "conversation": "Oi"
+            },
+            "messageType": "conversation",
+            "messageTimestamp": 1709220000,
+            "owner": false,
+            "ephemeralMessage": false
+        },
+        "event": "messages.upsert",
+        "instance": "zaptfood"
+    }
+}
